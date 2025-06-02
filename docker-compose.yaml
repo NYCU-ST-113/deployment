@@ -1,0 +1,138 @@
+services:
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - user
+      - apply
+      - payment
+      - logger
+      - mailer
+      - statistics
+    networks:
+      - app-network
+    restart: unless-stopped
+
+
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - '3000:3000'
+    depends_on:
+      - user
+      - apply
+      - payment
+      - logger
+      - mailer
+      - statistics
+    networks:
+      - app-network
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+
+  user:
+    build:
+      context: ./user
+    ports:
+      - '8007:8000'
+    depends_on:
+      - db
+    networks:
+      - app-network
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=mysql://user:password@db:3306/appdb
+
+  apply:
+    build:
+      context: ./apply
+    ports:
+      - '8002:8000'
+    depends_on:
+      - db
+    networks:
+      - app-network
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=mysql://user:password@db:3306/appdb
+
+  payment:
+    build:
+      context: ./payment
+    ports:
+      - '8003:8000'
+    depends_on:
+      - db
+    networks:
+      - app-network
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=mysql://user:password@db:3306/appdb
+
+  logger:
+    build:
+      context: ./logger
+    ports:
+      - '8004:8000'
+    depends_on:
+      - db
+    networks:
+      - app-network
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=mysql://user:password@db:3306/appdb
+
+  mailer:
+    build:
+      context: ./mailer
+    ports:
+      - '8005:8000'
+    depends_on:
+      - db
+    networks:
+      - app-network
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=mysql://user:password@db:3306/appdb
+
+  statistics:
+    build:
+      context: ./statistics
+    ports:
+      - '8006:8000'
+    depends_on:
+      - db
+    networks:
+      - app-network
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=mysql://user:password@db:3306/appdb
+
+  db:
+    image: mariadb:11.4.5
+    volumes:
+      - database_volume:/var/lib/mysql
+    ports:
+      - '3306:3306'
+    networks:
+      - app-network
+    restart: unless-stopped
+    environment:
+      - MYSQL_ROOT_PASSWORD=password
+      - MYSQL_DATABASE=appdb
+      - MYSQL_USER=user
+      - MYSQL_PASSWORD=password
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  database_volume:
+
